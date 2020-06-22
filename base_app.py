@@ -28,6 +28,9 @@ import joblib,os
 # Data dependencies
 import pandas as pd
 
+import re
+from nltk.tokenize import word_tokenize
+from collections import Counter
 
 # NLP Packages
 import spacy
@@ -50,21 +53,28 @@ tweet_cv = joblib.load(tweet_vectorizer) # loading your vectorizer from the pkl 
 
 # Load your raw data
 raw = "resources/train.csv"
+clean = "resources/clean_tweet_df.csv"
 
 # To Improve speed and cache data
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def explore_data(dataset):
 	df = pd.read_csv(os.path.join(dataset))
 	return df 
 
 dataframe=pd.DataFrame(explore_data(raw))
-pd.set_option('display.max_colwidth', -1)
+pd.set_option('display.max_colwidth', None)
+
+clean_df = pd.DataFrame(explore_data(clean))
 
 # Sentiment Dictionary
 def get_keys(val,my_dict):
 	for key, value in my_dict.items():
 		if value == value:
 			return key
+
+# Clean Tweets
+
+
 
 # The main function where we will build the actual app
 def main():
@@ -75,7 +85,7 @@ def main():
 
 	# Creating sidebar with selection box -
 	# you can create multiple pages this way
-	options = ["Prediction", "Information", "NLP"]
+	options = ["Prediction", "Information"]
 	selection = st.sidebar.selectbox("Choose Option", options)
 
 	# Building out the Prediction page
@@ -117,16 +127,16 @@ def main():
 		
 		# Show dataset
 		st.subheader("Raw Twitter data and label")
-		data = explore_data(raw)
 		
 		if st.checkbox('Show raw dataset'): # data is hidden if box is unchecked
-			st.dataframe(dataframe) # will write the df to the page
-		if st.checkbox("Preview DataFrame"):
-			data = dataframe[['sentiment','message']]
-			if st.button("Head"):
-				st.write(data.head())
-			if st.button("Tail"):
-				st.write(data.tail())
+			st.dataframe(dataframe[['sentiment','message']]) # will write the df to the page
+		
+		# if st.checkbox("Preview DataFrame"):
+		# 	data = dataframe[['sentiment','message']]
+		# 	if st.button("Head"):
+		# 		st.write(data.head())
+		# 	if st.button("Tail"):
+		# 		st.write(data.tail())
 
 		# Dimensions
 		st.subheader("Dataframe Dimensions")
@@ -143,50 +153,69 @@ def main():
 
 		# Histogram - number of labels
 		st.subheader("Number of labels")
-		bar_info = pd.DataFrame(data['sentiment'].value_counts(sort=False))
+		bar_info = pd.DataFrame(dataframe['sentiment'].value_counts(sort=False))
 		st.write(bar_info)
 		if st.button("Show Histogram"):
-			bar_plot=bar_info.plot(kind = 'bar',figsize=(6,3),legend=False)
+			bar_plot=bar_info.plot(kind = 'bar',figsize=(5,2),legend=False,fontsize=6)
 			st.pyplot()
 
+		#Clean dataset
+		st.subheader("Clean dataset")
+		# Create a function to clean the tweets
+		def cleanTxt(text):
+			text = re.sub('@[A-Za-z0–9]+', '', text) #Removing @mentions
+			text = re.sub('#', '', text) # Removing '#' hash tag
+			text = re.sub('RT[\s]+', '', text) # Removing RT
+			text = re.sub(':', '', text) # Removing ':'
+			text = re.sub('https?:\/\/\S+', '', text) # Removing hyperlink
+			text = text.lower()
 
+			
+			return text
 
-	# Building out the "NLP" page
-	if selection == "NLP":
-		st.info("Natural Language Processing")
-		tweet_text = st.text_area("Enter Text","Type Here")
-		nlp_task = ["Tokenization", "NER","Lemmatization","POS Tags"]
-		task_choice = st.selectbox("Chooose NLP Task",nlp_task)
-		if st.button("Analyze"):
-			st.info("Orinal Text".format(tweet_text))
+		# Clean the tweets
+		dataframe['clean_tweets'] = dataframe['message'].apply(cleanTxt)
 
-			docx = nlp(tweet_text)
-			if task_choice == 'Tokenization':
-				result = [token.text for token in docx ]
-			elif task_choice == 'Lemmatization':
-				result = ["'Token':{},'Lemma':{}".format(token.text,token.lemma_) for token in docx]
-			elif task_choice == 'NER':
-				result = [(entity.text,entity.label_)for entity in docx.ents]
-			elif task_choice == 'POS Tags':
-				result = ["'Token':{},'POS':{},'Dependency':{}".format(word.text,word.tag_,word.dep_) for word in docx]
+		if st.checkbox('Show clean dataset'): # data is hidden if box is unchecked
+			st.dataframe(dataframe[['sentiment','clean_tweets']])
 
-			st.json(result)
+		if st.button("Generate Wordcloud"):
+		
+		# Word Cloud
+			def gen_wordcloud():
+				# Create a dataframe with a column called Tweets
+				#df = pd.DataFrame([tweet.full_text for tweet in posts], columns=['Tweets'])
+				# word cloud visualization
+				allWords = ' '.join([twts for twts in clean_df['clean_tweet']])
+				wordCloud = WordCloud(width=700, height=500, random_state=21, max_font_size=110).generate(allWords)
+				plt.imshow(wordCloud, interpolation="bilinear")
+				plt.axis('off')
+				plt.savefig('WC.jpg')
+				img= Image.open("WC.jpg") 
+				return img
 
-		if st.button("Tabulize"):
-			docx = nlp(tweet_text)
-			c_tokens = [token.text for token in docx ]
-			c_lemma = [token.lemma_ for token in docx ]
-			c_pos = [token.pos_ for token in docx ]
+			img=gen_wordcloud()
 
-			new_df = pd.DataFrame(zip(c_tokens,c_lemma,c_pos),columns=['Tokens','Lemma','POS'])
-			st.dataframe(new_df)
+			st.image(img)
 
-		if st.checkbox("WordCloud"):
-			c_text = tweet_text
-			wordcloud = WordCloud().generate(c_text)
-			plt.imshow(wordcloud,interpolation='bilinear')
-			plt.axis("off")
-			st.pyplot()		
+		# Most common words
+		st.subheader("Word Frequency")
+		def word_freq(clean_text_list, top_n):
+			"""
+			Word Frequency
+			"""
+			flat = [item for sublist in clean_text_list for item in sublist]
+			with_counts = Counter(flat)
+			top = with_counts.most_common(top_n)
+			word = [each[0] for each in top]
+			num = [each[1] for each in top]
+			return pd.DataFrame([word, num]).T
+			
+		counter_text_list = [i.split() for i in clean_df['clean_tweet']]
+
+		wf = word_freq(counter_text_list, 20)
+		st.dataframe(wf)
+
 # Required to let Streamlit instantiate our web app.  
 if __name__ == '__main__':
 	main()
