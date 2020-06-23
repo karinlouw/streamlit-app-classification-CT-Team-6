@@ -27,14 +27,21 @@ import joblib,os
 
 # Data dependencies
 import pandas as pd
+import numpy as np
 
+# Preprocessing
 import re
+from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+from nltk.stem.wordnet import WordNetLemmatizer
 from collections import Counter
 
 # NLP Packages
+from textblob import TextBlob 
 import spacy
 nlp = spacy.load('en')
+from gensim.summarization import summarize
 
 # Wordcloud
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
@@ -47,6 +54,21 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")
 
+# Sumy Summary Pkg
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.summarizers.lex_rank import LexRankSummarizer
+
+
+# Function for Sumy Summarization
+def sumy_summarizer(docx):
+	parser = PlaintextParser.from_string(docx,Tokenizer("english"))
+	lex_summarizer = LexRankSummarizer()
+	summary = lex_summarizer(parser.document,3)
+	summary_list = [str(sentence) for sentence in summary]
+	result = ' '.join(summary_list)
+	return result
+
 # Vectorizer
 tweet_vectorizer = open("resources/tfidfvect.pkl","rb")
 tweet_cv = joblib.load(tweet_vectorizer) # loading your vectorizer from the pkl file
@@ -56,7 +78,7 @@ raw = "resources/train.csv"
 clean = "resources/clean_tweet_df.csv"
 
 # To Improve speed and cache data
-@st.cache(persist=True, allow_output_mutation=True)
+@st.cache(allow_output_mutation=True)
 def explore_data(dataset):
 	df = pd.read_csv(os.path.join(dataset))
 	return df 
@@ -67,12 +89,217 @@ pd.set_option('display.max_colwidth', None)
 clean_df = pd.DataFrame(explore_data(clean))
 
 # Sentiment Dictionary
+@st.cache
 def get_keys(val,my_dict):
 	for key, value in my_dict.items():
 		if value == value:
 			return key
 
-# Clean Tweets
+#Contraction dictionary
+contraction_dict = {
+  "ain't": "am not",
+  "aren't": "are not",
+  "can't": "cannot",
+  "can't've": "cannot have",
+  "'cause": "because",
+  "could've": "could have",
+  "couldn't": "could not",
+  "couldn't've": "could not have",
+  "didn't": "did not",
+  "doesn't": "does not",
+  "don't": "do not",
+  "hadn't": "had not",
+  "hadn't've": "had not have",
+  "hasn't": "has not",
+  "haven't": "have not",
+  "he'd": "he would",
+  "he'd've": "he would have",
+  "he'll": "he will",
+  "he'll've": "he will have",
+  "he's": "he is",
+  "how'd": "how did",
+  "how'd'y": "how do you",
+  "how'll": "how will",
+  "how's": "how is",
+  "i'd": "I would",
+  "i'd've": "I would have",
+  "i'll": "I will",
+  "i'll've": "I will have",
+  "i'm": "I am",
+  "i've": "I have",
+  "isn't": "is not",
+  "it'd": "it had",
+  "it'd've": "it would have",
+  "it'll": "it will",
+  "it'll've": "it will have",
+  "it's": "it is",
+  "let's": "let us",
+  "ma'am": "madam",
+  "mayn't": "may not",
+  "might've": "might have",
+  "mightn't": "might not",
+  "mightn't've": "might not have",
+  "must've": "must have",
+  "mustn't": "must not",
+  "mustn't've": "must not have",
+  "needn't": "need not",
+  "needn't've": "need not have",
+  "o'clock": "of the clock",
+  "oughtn't": "ought not",
+  "oughtn't've": "ought not have",
+  "shan't": "shall not",
+  "sha'n't": "shall not",
+  "shan't've": "shall not have",
+  "she'd": "she would",
+  "she'd've": "she would have",
+  "she'll": "she will",
+  "she'll've": "she will have",
+  "she's": "she is",
+  "should've": "should have",
+  "shouldn't": "should not",
+  "shouldn't've": "should not have",
+  "so've": "so have",
+  "so's": "so is",
+  "that'd": "that would",
+  "that'd've": "that would have",
+  "that's": "that is",
+  "there'd": "there had",
+  "there'd've": "there would have",
+  "there's": "there is",
+  "they'd": "they would",
+  "they'd've": "they would have",
+  "they'll": "they will",
+  "they'll've": "they will have",
+  "they're": "they are",
+  "they've": "they have",
+  "to've": "to have",
+  "wasn't": "was not",
+  "we'd": "we had",
+  "we'd've": "we would have",
+  "we'll": "we will",
+  "we'll've": "we will have",
+  "we're": "we are",
+  "we've": "we have",
+  "weren't": "were not",
+  "what'll": "what will",
+  "what'll've": "what will have",
+  "what're": "what are",
+  "what's": "what is",
+  "what've": "what have",
+  "when's": "when is",
+  "when've": "when have",
+  "where'd": "where did",
+  "where's": "where is",
+  "where've": "where have",
+  "who'll": "who will",
+  "who'll've": "who will have",
+  "who's": "who is",
+  "who've": "who have",
+  "why's": "why is",
+  "why've": "why have",
+  "will've": "will have",
+  "won't": "will not",
+  "won't've": "will not have",
+  "would've": "would have",
+  "wouldn't": "would not",
+  "wouldn't've": "would not have",
+  "y'all": "you all",
+  "y'alls": "you alls",
+  "y'all'd": "you all would",
+  "y'all'd've": "you all would have",
+  "y'all're": "you all are",
+  "y'all've": "you all have",
+  "you'd": "you had",
+  "you'd've": "you would have",
+  "you'll": "you you will",
+  "you'll've": "you you will have",
+  "you're": "you are",
+  "you've": "you have"
+}
+
+#Contraction function
+@st.cache
+def lookup_dict(text, dictionary):
+    for word in text.split():
+        if word.lower() in dictionary:
+            if word.lower() in text.split():
+                text = text.replace(word, dictionary[word.lower()])
+    return text
+
+# Function to clean the tweets
+@st.cache(allow_output_mutation=True)
+def clean_text(text):
+	text = re.sub('@[A-Za-z0–9]+', '', text) #Removing @mentions
+	text = re.sub('#', '', text) # Removing # hash tag
+	text = re.sub('RT[\s]+', '', text) # Removing RT
+	text = re.sub(':', '', text) # Removing ':'
+	text = re.sub('https?:\/\/\S+', '', text) # Removing hyperlink
+	text = text.lower() #Change to 
+	text = word_tokenize(text)
+	return text
+
+# Function to Analyse Tokens and Lemma
+@st.cache
+def text_analyzer(my_text):
+	nlp = spacy.load('en')
+	docx = nlp(my_text)
+	tokens = [ token.text for token in docx]
+	allData = [('Token:{},\n"Lemma":{}'.format(token.text,token.lemma_))for token in docx ]
+	return allData
+
+# Function For Extracting Entities
+@st.cache
+def entity_analyzer(my_text):
+	nlp = spacy.load('en')
+	docx = nlp(my_text)
+	tokens = [ token.text for token in docx]
+	entities = [(entity.text,entity.label_)for entity in docx.ents]
+	allData = ['"Token":{},\n"Entities":{}'.format(tokens,entities)]
+	return allData
+
+#Function to remove stopwords:
+@st.cache
+def remove_stopwords(text):
+	return [word for word in text if word not in stopwords.words('english')]
+
+#Function to generate wordcloud:
+@st.cache
+def gen_wordcloud(df):
+	"""
+	Word Cloud
+	"""
+	allWords = ' '.join([twts for twts in df['clean_tweet']])
+	wordCloud = WordCloud(width=700, height=500, random_state=21, max_font_size=130).generate(allWords)
+	plt.imshow(wordCloud, interpolation="bilinear")
+	plt.axis('off')
+	plt.savefig('WC.jpg')
+	img= Image.open("WC.jpg") 
+	return img
+
+def gen_sentiment_wordcloud(df,sent):
+	"""
+	Word Cloud
+	"""
+	allWords = ' '.join([twts for twts in df['clean_tweet'][df['sentiment']==sent]])
+	wordCloud = WordCloud(width=700, height=500, random_state=21, max_font_size=130).generate(allWords)
+	plt.imshow(wordCloud, interpolation="bilinear")
+	plt.axis('off')
+	plt.savefig('WC.jpg')
+	img= Image.open("WC.jpg") 
+	return img
+
+#Function to calculate work frequency
+@st.cache
+def word_freq(clean_text_list, top_n):
+	"""
+	Word Frequency
+	"""
+	flat = [item for sublist in clean_text_list for item in sublist]
+	with_counts = Counter(flat)
+	top = with_counts.most_common(top_n)
+	word = [each[0] for each in top]
+	num = [each[1] for each in top]
+	return pd.DataFrame([word, num]).T
 
 
 
@@ -85,38 +312,76 @@ def main():
 
 	# Creating sidebar with selection box -
 	# you can create multiple pages this way
-	options = ["Prediction", "Information"]
+	options = ["Prediction", "NLP", "Information"]
 	selection = st.sidebar.selectbox("Choose Option", options)
 
-	# Building out the Prediction page
+	##### Building out the Prediction page ####
 	if selection == "Prediction":
 		st.info("Prediction with ML Models")
+		raw_text = st.text_area("Enter Text","Type Here")		
 		
-		tweet_text = st.text_area("Enter Text","Type Here")
-		all_ml_modles= ["LR","LR2"]
-		model_choice = st.selectbox("Choose ML model",all_ml_modles)
+
+		# Model Prediction
+
+		#Select model
+		all_ml_modles= ["LR","LR3", "LR3"]
+		model_choice = st.selectbox("Select base ML model",all_ml_modles)
+		
 		prediction_labels = {'anti':-1,'news':0,'pro':1,}
 		
 		if st.button("Classify"):
-			st.text("Original Text:\n{}".format(tweet_text))
-			vect_text = tweet_cv.transform([tweet_text]).toarray()
+			st.text("Original Text:\n{}".format(raw_text))
+			vect_text = tweet_cv.transform([raw_text]).toarray()
+
 			if model_choice == 'LR':
 				predictor = predictor = joblib.load(open(os.path.join("resources/Logistic_regression.pkl"),"rb"))
 				prediction = predictor.predict(vect_text)
 				# st.write(prediction)
 			elif model_choice == 'LR2':
-				predictor = predictor = joblib.load(open(os.path.join("resources/Logistic_regression.pkl"),"rb"))
+				predictor = predictor = joblib.load(open(os.path.join("resources/Logistic_regression.pkl2"),"rb"))
+				prediction = predictor.predict(vect_text)
+				# st.write(prediction)
+			elif model_choice == 'LR3':
+				predictor = predictor = joblib.load(open(os.path.join("resources/Logistic_regression3.pkl"),"rb"))
 				prediction = predictor.predict(vect_text)
 				# st.write(prediction)
 
 			final_result = get_keys(prediction,prediction_labels)
-			st.success("Tweet categorized as : {}".format(final_result))
+			st.success("Tweet categorized as : {} using the {} model".format(final_result, model_choice))
+
+	##### Building out the NLP page ####
+	if selection == "NLP":
+		nlp_text = st.text_area("Enter Text","Type Here")
+		nlp_task = ["Tokenization","Lemmatization","NER","POS Tags"]
+		task_choice = st.selectbox("Choose NLP Task",nlp_task)
+		if st.button("Analyze"):
+			st.info("Original Text::\n{}".format(nlp_text))
+
+			docx = nlp(nlp_text)
+			if task_choice == 'Tokenization':
+				result = [token.text for token in docx ]
+			elif task_choice == 'Lemmatization':
+				result = ["'Token':{},'Lemma':{}".format(token.text,token.lemma_) for token in docx]
+			elif task_choice == 'NER':
+				result = [(entity.text,entity.label_)for entity in docx.ents]
+			elif task_choice == 'POS Tags':
+				result = ["'Token':{},'POS':{},'Dependency':{}".format(word.text,word.tag_,word.dep_) for word in docx]
+
+			st.json(result)
+
+		if st.button("Tabulize"):
+			docx = nlp(nlp_text)
+			c_tokens = [token.text for token in docx ]
+			c_lemma = [token.lemma_ for token in docx ]
+			c_pos = [token.pos_ for token in docx ]
+
+			new_df = pd.DataFrame(zip(c_tokens,c_lemma,c_pos),columns=['Tokens','Lemma','POS'])
+			st.dataframe(new_df)
 
 
-	# Building out the "Information" page
+	##### Building out the "Information" page #####
 	
 	if selection == "Information":
-		#st.info("General Information")
 		# You can read a markdown file from supporting resources folder
 		st.markdown("## Exploratory Data Analysis")
 		
@@ -129,15 +394,8 @@ def main():
 		st.subheader("Raw Twitter data and label")
 		
 		if st.checkbox('Show raw dataset'): # data is hidden if box is unchecked
-			st.dataframe(dataframe[['sentiment','message']]) # will write the df to the page
+			st.dataframe(clean_df) # will write the df to the page
 		
-		# if st.checkbox("Preview DataFrame"):
-		# 	data = dataframe[['sentiment','message']]
-		# 	if st.button("Head"):
-		# 		st.write(data.head())
-		# 	if st.button("Tail"):
-		# 		st.write(data.tail())
-
 		# Dimensions
 		st.subheader("Dataframe Dimensions")
 		data_dim = st.radio('Choose dimensions to display',('All','Rows','Columns'))
@@ -161,59 +419,27 @@ def main():
 
 		#Clean dataset
 		st.subheader("Clean dataset")
-		# Create a function to clean the tweets
-		def cleanTxt(text):
-			text = re.sub('@[A-Za-z0–9]+', '', text) #Removing @mentions
-			text = re.sub('#', '', text) # Removing '#' hash tag
-			text = re.sub('RT[\s]+', '', text) # Removing RT
-			text = re.sub(':', '', text) # Removing ':'
-			text = re.sub('https?:\/\/\S+', '', text) # Removing hyperlink
-			text = text.lower()
 
-			
-			return text
-
-		# Clean the tweets
-		dataframe['clean_tweets'] = dataframe['message'].apply(cleanTxt)
-
+		# Clean tweets
 		if st.checkbox('Show clean dataset'): # data is hidden if box is unchecked
-			st.dataframe(dataframe[['sentiment','clean_tweets']])
-
-		if st.button("Generate Wordcloud"):
+			st.dataframe(clean_df[['sentiment','clean_tweet']])
 		
-		# Word Cloud
-			def gen_wordcloud():
-				# Create a dataframe with a column called Tweets
-				#df = pd.DataFrame([tweet.full_text for tweet in posts], columns=['Tweets'])
-				# word cloud visualization
-				allWords = ' '.join([twts for twts in clean_df['clean_tweet']])
-				wordCloud = WordCloud(width=700, height=500, random_state=21, max_font_size=110).generate(allWords)
-				plt.imshow(wordCloud, interpolation="bilinear")
-				plt.axis('off')
-				plt.savefig('WC.jpg')
-				img= Image.open("WC.jpg") 
-				return img
+		# Word Cloud - Static wordcloud
+		if st.button('Generate Word Cloud'):
+			img=gen_wordcloud(clean_df)
+			st.image(img)
 
-			img=gen_wordcloud()
-
+			if st.button('Postive Word Cloud'):
+				img=gen_sentiment_wordcloud(clean_df,1)
 			st.image(img)
 
 		# Most common words
 		st.subheader("Word Frequency")
-		def word_freq(clean_text_list, top_n):
-			"""
-			Word Frequency
-			"""
-			flat = [item for sublist in clean_text_list for item in sublist]
-			with_counts = Counter(flat)
-			top = with_counts.most_common(top_n)
-			word = [each[0] for each in top]
-			num = [each[1] for each in top]
-			return pd.DataFrame([word, num]).T
 			
 		counter_text_list = [i.split() for i in clean_df['clean_tweet']]
 
 		wf = word_freq(counter_text_list, 20)
+
 		st.dataframe(wf)
 
 # Required to let Streamlit instantiate our web app.  
