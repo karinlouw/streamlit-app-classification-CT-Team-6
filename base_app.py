@@ -28,6 +28,7 @@ import joblib,os
 # Data dependencies
 import pandas as pd
 import numpy as np
+import seaborn as sns
 
 # Preprocessing
 import re
@@ -40,6 +41,7 @@ from collections import Counter
 # NLP Packages
 from textblob import TextBlob 
 import spacy
+from spacy_streamlit import visualize_parser
 nlp = spacy.load('en')
 from gensim.summarization import summarize
 
@@ -86,6 +88,7 @@ def explore_data(dataset):
 dataframe=pd.DataFrame(explore_data(raw))
 pd.set_option('display.max_colwidth', None)
 
+raw_df = pd.DataFrame(explore_data(raw))
 clean_df = pd.DataFrame(explore_data(clean))
 
 # Sentiment Dictionary
@@ -272,20 +275,8 @@ def gen_wordcloud(df):
 	wordCloud = WordCloud(width=700, height=500, random_state=21, max_font_size=130).generate(allWords)
 	plt.imshow(wordCloud, interpolation="bilinear")
 	plt.axis('off')
-	plt.savefig('WC.jpg')
-	img= Image.open("WC.jpg") 
-	return img
-
-def gen_sentiment_wordcloud(df,sent):
-	"""
-	Word Cloud
-	"""
-	allWords = ' '.join([twts for twts in df['clean_tweet'][df['sentiment']==sent]])
-	wordCloud = WordCloud(width=700, height=500, random_state=21, max_font_size=130).generate(allWords)
-	plt.imshow(wordCloud, interpolation="bilinear")
-	plt.axis('off')
-	plt.savefig('WC.jpg')
-	img= Image.open("WC.jpg") 
+	plt.savefig('resources/imgs/WC.jpg')
+	img= Image.open("resources/imgs/WC.jpg") 
 	return img
 
 #Function to calculate work frequency
@@ -317,7 +308,7 @@ def main():
 
 	##### Building out the Prediction page ####
 	if selection == "Prediction":
-		st.info("Prediction with ML Models")
+		st.info("Prediction with Machine Learning Models")
 		raw_text = st.text_area("Enter Text","Type Here")		
 		
 
@@ -351,7 +342,9 @@ def main():
 
 	##### Building out the NLP page ####
 	if selection == "NLP":
-		nlp_text = st.text_area("Enter Text","Type Here")
+		st.markdown('# Natural Language Processing Tool')
+
+		nlp_text = st.text_area("Enter Text To Analyze","Type Here")
 		nlp_task = ["Tokenization","Lemmatization","NER","POS Tags"]
 		task_choice = st.selectbox("Choose NLP Task",nlp_task)
 		if st.button("Analyze"):
@@ -369,7 +362,9 @@ def main():
 
 			st.json(result)
 
-		if st.button("Tabulize"):
+		#NLP table	
+		st.markdown('# View NLP table')
+		if st.button("View Table"):
 			docx = nlp(nlp_text)
 			c_tokens = [token.text for token in docx ]
 			c_lemma = [token.lemma_ for token in docx ]
@@ -383,21 +378,21 @@ def main():
 	
 	if selection == "Information":
 		# You can read a markdown file from supporting resources folder
-		st.markdown("## Exploratory Data Analysis")
+		st.markdown("# Exploratory Data Analysis")
 		
 		#Sentiment Description
-		st.subheader("Sentiment Description")
+		st.markdown("### Sentiment Description")
 		# Image
 		st.image(Image.open(os.path.join("resources/sentiment_description.png")))
 		
 		# Show dataset
-		st.subheader("Raw Twitter data and label")
+		st.markdown("# Raw Twitter data and labels")
 		
 		if st.checkbox('Show raw dataset'): # data is hidden if box is unchecked
-			st.dataframe(clean_df) # will write the df to the page
+			st.dataframe(raw_df) # will write the df to the page
 		
 		# Dimensions
-		st.subheader("Dataframe Dimensions")
+		st.markdown("# Dataframe Dimensions")
 		data_dim = st.radio('Choose dimensions to display',('All','Rows','Columns'))
 		if data_dim == 'All':
 			st.text("Showing Shape of Entire Dataframe")
@@ -409,36 +404,51 @@ def main():
 			st.text("Showing Length of Columns")
 			st.info(dataframe.shape[1])
 
-		# Histogram - number of labels
-		st.subheader("Number of labels")
+		# Piechart - percentage of labels
+		st.markdown("# Sentiment labels")
 		bar_info = pd.DataFrame(dataframe['sentiment'].value_counts(sort=False))
-		st.write(bar_info)
-		if st.button("Show Histogram"):
+		bar_info.reset_index(level=0, inplace=True)
+		bar_info.columns = ['Sentiment','Count']
+		st.dataframe(bar_info)
+
+		if st.button("Show Chart"):
 			bar_plot=bar_info.plot(kind = 'bar',figsize=(5,2),legend=False,fontsize=6)
 			st.pyplot()
 
 		#Clean dataset
-		st.subheader("Clean dataset")
+		st.markdown("# Clean dataset")
 
 		# Clean tweets
 		if st.checkbox('Show clean dataset'): # data is hidden if box is unchecked
 			st.dataframe(clean_df[['sentiment','clean_tweet']])
 		
 		# Word Cloud - Static wordcloud
-		if st.button('Generate Word Cloud'):
-			img=gen_wordcloud(clean_df)
-			st.image(img)
+		st.markdown('# Word Clouds')
+		st.markdown('#### General Word Cloud')
+		newsimg = Image.open('resources/imgs/WC.png')
+		st.image(newsimg)
 
-			if st.button('Postive Word Cloud'):
-				img=gen_sentiment_wordcloud(clean_df,1)
-			st.image(img)
+		st.markdown('### News, Pro and Anti Word Clouds')
+		wc_options = ["News", "Pro", "Anti"]
+		wc_selection = st.selectbox("Select Word Cloud Sentiment Option", wc_options)
+
+		if wc_selection=="News":
+			newsimg = Image.open('resources/imgs/newsWC.png')
+			st.image(newsimg)
+		elif wc_selection=="Pro":
+			newsimg = Image.open('resources/imgs/proWC.png')
+			st.image(newsimg)
+		else:
+			newsimg = Image.open('resources/imgs/antiWC.png')
+			st.image(newsimg)
 
 		# Most common words
-		st.subheader("Word Frequency")
+		st.markdown("# Word Frequency")
 			
 		counter_text_list = [i.split() for i in clean_df['clean_tweet']]
 
-		wf = word_freq(counter_text_list, 20)
+		wf = word_freq(counter_text_list, 21)
+		wf.columns = ['Word','Frequency']
 
 		st.dataframe(wf)
 
