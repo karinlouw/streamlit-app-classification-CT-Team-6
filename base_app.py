@@ -52,9 +52,9 @@ from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 from PIL import Image
 
 # Plotting
-import matplotlib.pyplot as plt 
 import matplotlib
 matplotlib.use("Agg")
+import matplotlib.pyplot as plt 
 
 # Sumy Summary Pkg
 from sumy.parsers.plaintext import PlaintextParser
@@ -404,15 +404,19 @@ def main():
 			st.text("Showing Length of Columns")
 			st.info(dataframe.shape[1])
 
-		# Piechart - percentage of labels
+		# Count of labels
 		st.markdown("# Sentiment labels")
 		bar_info = pd.DataFrame(dataframe['sentiment'].value_counts(sort=False))
 		bar_info.reset_index(level=0, inplace=True)
 		bar_info.columns = ['Sentiment','Count']
-		st.dataframe(bar_info)
+		bar_info['Percentage'] = [(i/len(dataframe['sentiment'])*100) for i in bar_info['Count']]
+		st.dataframe(bar_info[['Sentiment','Count']])
 
-		if st.button("Show Chart"):
-			bar_plot=bar_info.plot(kind = 'bar',figsize=(5,2),legend=False,fontsize=6)
+		#Pie chart
+		if st.button("Show Percentage Chart"):
+			labels = ['Neutral', 'Pro', 'News', 'Anti']
+			colors = ['#79BAC1','#5B8C5A','#F8E621','#6A8ACF']
+			plt.pie(bar_info['Percentage'], labels= labels, colors=colors, startangle=90, autopct='%.2f%%')
 			st.pyplot()
 
 		#Clean dataset
@@ -438,8 +442,11 @@ def main():
 		elif wc_selection=="Pro":
 			newsimg = Image.open('resources/imgs/proWC.png')
 			st.image(newsimg)
-		else:
+		elif wc_selection=="Anti":
 			newsimg = Image.open('resources/imgs/antiWC.png')
+			st.image(newsimg)
+		else:
+			newsimg = Image.open('resources/imgs/neutralWC.png')
 			st.image(newsimg)
 
 		# Most common words
