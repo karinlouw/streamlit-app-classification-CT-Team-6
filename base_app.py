@@ -165,15 +165,15 @@ def main():
 			vect_text = tweet_cv.transform([raw_text]).toarray()
 
 			if model_choice == 'LR':
-				predictor = joblib.load(open(os.path.join("resources/Logistic_regression.pkl"),"rb"))
+				predictor = joblib.load(open(os.path.join("resources/models/Logistic_regression.pkl"),"rb"))
 				prediction = predictor.predict(vect_text)
 				# st.write(prediction)
 			elif model_choice == 'LR2':
-				predictor = joblib.load(open(os.path.join("resources/Logistic_regression2.pkl"),"rb"))
+				predictor = joblib.load(open(os.path.join("resources/models/Logistic_regression2.pkl"),"rb"))
 				prediction = predictor.predict(vect_text)
 				# st.write(prediction)
 			elif model_choice == 'LR3':
-				predictor = joblib.load(open(os.path.join("resources/Logistic_regression3.pkl"),"rb"))
+				predictor = joblib.load(open(os.path.join("resources/models/Logistic_regression3.pkl"),"rb"))
 				prediction = predictor.predict(vect_text)
 				# st.write(prediction)
 
