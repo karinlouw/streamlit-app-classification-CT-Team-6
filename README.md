@@ -56,5 +56,5 @@ To do this, follow the steps below by running the given commands within a Git ba
 
 You should also be automatically directed to the base page of our web app. This should look something like:
 
-![Streamlit base page](resources/imgs/streamlit-base-splash-screen.png)
+![Streamlit base page](resources/imgs/twitter sentiment app.PNG)
 
