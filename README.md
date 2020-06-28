@@ -54,7 +54,5 @@ To do this, follow the steps below by running the given commands within a Git ba
     Network URL: http://192.168.43.41:8501
 ```
 
-You should also be automatically directed to the base page of our web app. This should look something like:
-
-![Streamlit base page](resources/imgs/twitter sentiment app.PNG)
+Once the app has opened you can play around with it! Type in your own tweets and use our model to predict the sentiment, have a look at some interesting insights we found while looking through the twitter data, learn what stemming, lemmatisatin, part of speech tagging and named entity recognition is all about!
 
