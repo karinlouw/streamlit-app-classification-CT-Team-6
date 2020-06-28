@@ -189,10 +189,8 @@ def main():
 					'- **Lemmatization** - Returns single base form of a word \n'
 					'- **Named-entity recognition (NER)** - Locate and classify entities in categories such as person names and organisations\n'
 					'- **Parts of Speech tags (POS)** - The identification of words as nouns, verbs, adjectives, etc.')
-		st.markdown('Enter your text below to see how text are processed using the Spacy library.')
 
-
-		nlp_text = st.text_area("","Type Here")
+		nlp_text = st.text_area("Enter your text to see how text are processed using the Spacy library.","Type Here")
 		nlp_task = ["Tokenization","Lemmatization","NER","POS Tags"]
 		task_choice = st.selectbox("Choose NLP Task",nlp_task)
 		
@@ -218,7 +216,7 @@ def main():
 			elif task_choice == 'POS Tags':
 				pos_df=pd.DataFrame(zip(token, tag, depend), columns=['Tokens', 'Tag', 'Dependency'])
 				st.dataframe(pos_df)
-
+		st.markdown('---')
 		#NLP table	
 		st.markdown('## View table of NLP results')
 		st.markdown("Select 'View Table' to view a table of the tokens, lemma and POS tags of your text.")
@@ -226,7 +224,8 @@ def main():
 			docx = nlp(nlp_text)
 			table_df = pd.DataFrame(zip(token,lemma,pos),columns=['Tokens','Lemma','POS'])
 			st.dataframe(table_df)
-
+		
+		st.markdown('---')
 		#Word cloud
 		st.markdown('## Generate text Word Cloud')
 		st.markdown("Select 'Generate Word Cloud' to view a word cloud of the most common words in your text")
@@ -247,7 +246,7 @@ def main():
 		st.markdown("## Sentiment Description")
 		st.markdown("The table displays the description of each sentiment category.")
 		# Image
-		st.image(Image.open(os.path.join("resources/sentiment_description.png")))
+		st.image(Image.open(os.path.join("resources/imgs/sentiment_description.png")))
 		
 		# Show dataset
 		st.markdown("## Raw Twitter data and labels")
