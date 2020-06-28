@@ -65,7 +65,7 @@ from sumy.summarizers.lex_rank import LexRankSummarizer
 HTML_WRAPPER = """<div style="overflow-x: auto; border: 1px solid #e6e9ef; border-radius: 0.25rem; padding: 1rem; margin-bottom: 2.5rem">{}</div>"""
 
 # Vectorizer
-tweet_vectorizer = open("resources/tfidfvect.pkl","rb")
+tweet_vectorizer = open("resources/tfidf.pkl","rb")
 tweet_cv = joblib.load(tweet_vectorizer) # loading your vectorizer from the pkl file
 
 # Load csvs
@@ -96,7 +96,7 @@ top_mentions_df=pd.DataFrame(explore_data(top_mentions))
 @st.cache
 def get_keys(val,my_dict):
 	for key, value in my_dict.items():
-		if value == value:
+		if value == val:
 			return key
 
 # Function to Analyse Tokens and Lemma
@@ -154,26 +154,26 @@ def main():
 		# Model Prediction
 
 		#Select model
-		all_ml_modles= ["LR","LR3", "LR3"]
+		all_ml_modles= ["Linear SVC","Naive Bayes", "Logistic Regression"]
 		model_choice = st.selectbox("Select base ML model",all_ml_modles)
 		
 		st.markdown("#### Select 'Classify' to view the result of the model prediction")
 		st.markdown("")
-		prediction_labels = {'anti':-1,'news':0,'pro':1,}
+		prediction_labels = {'anti climate change':-1,'news':2,'pro climate change':1,'neutral':0}
 		if st.button("Classify"):
 			#st.text("Original Text:\n{}".format(raw_text))
 			vect_text = tweet_cv.transform([raw_text]).toarray()
 
-			if model_choice == 'LR':
-				predictor = joblib.load(open(os.path.join("resources/models/Logistic_regression.pkl"),"rb"))
+			if model_choice == 'Linear SVC':
+				predictor = joblib.load(open(os.path.join("resources/models/linsvcmodel.pkl"),"rb"))
 				prediction = predictor.predict(vect_text)
 				# st.write(prediction)
-			elif model_choice == 'LR2':
-				predictor = joblib.load(open(os.path.join("resources/models/Logistic_regression2.pkl"),"rb"))
+			elif model_choice == 'Naive Bayes':
+				predictor = joblib.load(open(os.path.join("resources/models/naivebayesmodel.pkl"),"rb"))
 				prediction = predictor.predict(vect_text)
 				# st.write(prediction)
-			elif model_choice == 'LR3':
-				predictor = joblib.load(open(os.path.join("resources/models/Logistic_regression3.pkl"),"rb"))
+			elif model_choice == 'Logistic Regression':
+				predictor = joblib.load(open(os.path.join("resources/models/logisticregression.pkl"),"rb"))
 				prediction = predictor.predict(vect_text)
 				# st.write(prediction)
 
