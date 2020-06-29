@@ -136,7 +136,7 @@ def word_freq(clean_text_list, top_n):
 def main():
 	'''Creates a main title and subheader on your page -
 	these are static across all pages'''
-	st.title("Tweet Classifer")
+	st.title("Tweet Classifier")
 	st.subheader("Climate change tweet classification")
 
 	# Creating sidebar with selection box -
@@ -270,7 +270,7 @@ def main():
 
 		# Count of labels
 		st.markdown("## Sentiment labels")
-		st.markdown("Below is a table displaying the count of each sentiment in the dataset. Majority of the tweets are positive(1) towards climate change. The leaset amount of tweets are negative(-1). This means that we have an unbalanced dataset that might have an affect on our prediction models. Select 'Show Bar Graph' to view this information visually.")
+		st.markdown("Below is a table displaying the count of each sentiment in the dataset. Majority of the tweets are positive(1) towards climate change. The least amount of tweets are negative(-1). This means that we have an unbalanced dataset that might have an effect on our prediction models. Select 'Show Bar Graph' to view this information visually.")
 		bar_info = pd.DataFrame(raw_df['sentiment'].value_counts(sort=False))
 		bar_info.reset_index(level=0, inplace=True)
 		bar_info.columns = ['Sentiment','Count']
@@ -299,7 +299,7 @@ def main():
 
 		# Retweets
 		st.markdown("## Retweets")
-		st.markdown("The first thing we look at are the retweets. We find that just over 60% of the tweets are retweets. There is a possibility that some of these retweets are duplicates. We also look at the top 5 most retweeted tweets and how many times they were retweeted.")
+		st.markdown("The first thing we look at is the retweets. We find that just over 60% of the tweets are retweets. There is a possibility that some of these retweets are duplicates. We also look at the top 5 most retweeted tweets and how many times they were retweeted.")
 
 		valuecounts = df_with_metadata['retweet'].value_counts()
 		st.write('No: ', round(valuecounts[1]/len(df_with_metadata['retweet'])*100,2),'%')
@@ -354,13 +354,22 @@ def main():
 		# Most Common Words
 		st.markdown("## Most Common Words")
 		st.markdown('If we look at the most common words used, we see the following:\n\n'
-		"- For all the words : **climate**, **change**, **rt**, **global**,and **warming** all are at the top of the word counts. These are top   occurences throughout all categories.\n\n"
-		"- For negative words : **science**, **cause**, **real**, and **scam** stand out as top words that are distinct to negative.\n\n"
-		"- For news words : **fight**, **epa**, **pruit**, **scientist**,and **new** stand out as top words that are distinct to news.")
+		"- For all the words: **climate**, **change**, **rt**, **global**,and **warming** all are at the top of the word counts. These are top   occurrences throughout all categories.\n\n"
+		"- For negative words: **science**, **cause**, **real**, and **scam** stand out as top words that are distinct to the negative category.\n\n"
+		"- For news words: **fight**, **epa**, **pruit**, **scientist**, and **new** stand out as top words that are distinct to the news category.")
 		st.dataframe(top_words_df)		
 
 		# Conclusion
-		st.markdown("## Conclusion")
+		#st.markdown("## Conclusion")
+
+		# Most Common Words
+		st.markdown("## Created by:")
+		st.markdown('\n'
+		"- Karin Louw\n"
+		"- Jonathan Dankers\n"
+		"- Luvuyo Nkosana\n"
+		"- Wright Nyoka\n"
+		"- Kwande Skaap\n"
 	
 # Required to let Streamlit instantiate our web app.  
 if __name__ == '__main__':
