@@ -370,6 +370,7 @@ def main():
 		"- Luvuyo Nkosana\n"
 		"- Wright Nyoka\n"
 		"- Kwande Skaap\n"
+		"- Tsholofelo Mautjana")
 	
 # Required to let Streamlit instantiate our web app.  
 if __name__ == '__main__':
