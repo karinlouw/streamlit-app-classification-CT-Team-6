@@ -183,14 +183,14 @@ def main():
 	##### Building out the NLP page ####
 	if selection == "Natural Language Processing Tool":
 		st.markdown('# Natural Language Processing Tool')
-		st.markdown('Natural language processing, commonly known as NLP, is a field of artificial intellegence about the interaction between computers and humans using natural language. The objective of NLP is for the computer to read, understand and derive meaning from human languages.')
+		st.markdown('Natural language processing, commonly known as NLP, is a field of artificial intelligence about the interaction between computers and humans using natural language. The objective of NLP is for the computer to read, understand and derive meaning from human languages.')
 		st.markdown('The following text processing tools can be viewed on your input text below:\n'
 					'- **Tokenization** - Listing each word and punctuation \n'
 					'- **Lemmatization** - Returns single base form of a word \n'
 					'- **Named-entity recognition (NER)** - Locate and classify entities in categories such as person names and organisations\n'
 					'- **Parts of Speech tags (POS)** - The identification of words as nouns, verbs, adjectives, etc.')
 
-		nlp_text = st.text_area("Enter your text to see how text are processed using the Spacy library.","Type Here")
+		nlp_text = st.text_area("Enter your text to see how text is processed using the Spacy library.","Type Here")
 		nlp_task = ["Tokenization","Lemmatization","NER","POS Tags"]
 		task_choice = st.selectbox("Choose NLP Task",nlp_task)
 		
